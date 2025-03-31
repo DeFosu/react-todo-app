@@ -7,6 +7,10 @@ import {
   FormInput,
   SubmitButton,
 } from "../../components/Form";
+import { useNavigate } from "react-router";
+import { auth } from "../../firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
 
 type FormProps = {
   name: string;
@@ -21,6 +25,7 @@ const SignUp: React.FC = () => {
     handleSubmit,
     watch,
     formState: { errors },
+    setError,
   } = useForm<FormProps>({
     defaultValues: {
       name: "",
@@ -32,8 +37,69 @@ const SignUp: React.FC = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
-  const onSubmit: SubmitHandler<FormProps> = (data) => console.log(data);
+  const onSubmit: SubmitHandler<FormProps> = async ({
+    name,
+    email,
+    password,
+  }) => {
+    setAuthError("");
+    setIsSubmitting(true);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      await updateProfile(userCredential.user, {
+        displayName: name,
+      });
+
+      console.log("Registered:", userCredential.user);
+      navigate(ROUTES.home);
+    } catch (error) {
+      setIsSubmitting(false);
+
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case "auth/email-already-in-use":
+            setError("email", {
+              type: "manual",
+              message: "This email is already registered",
+            });
+            break;
+          case "auth/invalid-email":
+            setError("email", {
+              type: "manual",
+              message: "Invalid email address",
+            });
+            break;
+          case "auth/weak-password":
+            setError("password", {
+              type: "manual",
+              message: "Password should be at least 6 characters",
+            });
+            break;
+          case "auth/operation-not-allowed":
+            setAuthError("Registration is currently disabled");
+            break;
+          case "auth/too-many-requests":
+            setAuthError("Too many attempts. Try again later.");
+            break;
+          default:
+            setAuthError("Failed to create account. Please try again.");
+            console.error("Registration error:", error);
+        }
+      } else {
+        setAuthError("An unexpected error occurred. Please try again.");
+        console.error("Unexpected error:", error);
+      }
+    }
+  };
 
   const password = watch("password");
 
@@ -41,8 +107,14 @@ const SignUp: React.FC = () => {
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto">
       <h1 className="text-3xl font-semibold text-center">Create Account</h1>
       <Divider />
+
+      {authError && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+          {authError}
+        </div>
+      )}
+
       <div className="flex flex-col gap-4">
-        {/* Name Field */}
         <Controller
           name="name"
           control={control}
@@ -68,7 +140,6 @@ const SignUp: React.FC = () => {
           )}
         />
 
-        {/* Email Field */}
         <Controller
           name="email"
           control={control}
@@ -94,7 +165,6 @@ const SignUp: React.FC = () => {
           )}
         />
 
-        {/* Password Field */}
         <Controller
           name="password"
           control={control}
@@ -123,7 +193,6 @@ const SignUp: React.FC = () => {
           )}
         />
 
-        {/* Confirm Password Field */}
         <Controller
           name="confirmPassword"
           control={control}
@@ -151,7 +220,11 @@ const SignUp: React.FC = () => {
           )}
         />
 
-        <SubmitButton value="Sign Up" className="mt-4" />
+        <SubmitButton
+          value="Sign Up"
+          className="mt-4"
+          disabled={isSubmitting}
+        />
 
         <AuthLink
           promptText="Already have an account?"

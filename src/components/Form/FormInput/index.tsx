@@ -51,7 +51,7 @@ const FormInput: React.FC<FormInputProps> = ({
           autoComplete={autoComplete}
           className={`px-2 ${
             showPasswordToggle ? "pr-12" : ""
-          } py-2.5 border w-full focus-within:outline-0 rounded text-neutral-50 ${className} ${
+          } py-2.5 border w-full focus-within:outline-0 rounded text-neutral-50 bg-neutral-800 ${className} ${
             errors?.[name] ? "border-red-500" : "border-neutral-700"
           }`}
           aria-invalid={errors?.[name] ? "true" : "false"}

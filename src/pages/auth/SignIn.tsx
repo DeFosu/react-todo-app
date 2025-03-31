@@ -7,6 +7,10 @@ import {
   AuthLink,
   FormInput,
 } from "../../components/Form";
+import { useNavigate } from "react-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase";
+import { FirebaseError } from "firebase/app";
 
 type FormProps = {
   email: string;
@@ -18,6 +22,7 @@ export const SignIn: React.FC = () => {
     control,
     handleSubmit,
     formState: { errors },
+    setError,
   } = useForm<FormProps>({
     defaultValues: {
       email: "",
@@ -26,8 +31,57 @@ export const SignIn: React.FC = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
-  const onSubmit: SubmitHandler<FormProps> = (data) => console.log(data);
+  const onSubmit: SubmitHandler<FormProps> = async ({ email, password }) => {
+    setAuthError("");
+    setIsSubmitting(true);
+
+    try {
+      const userAuth = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Logged in:", userAuth.user);
+      navigate(ROUTES.home);
+    } catch (error) {
+      setIsSubmitting(false);
+
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case "auth/invalid-email":
+            setError("email", {
+              type: "manual",
+              message: "Invalid email address",
+            });
+            break;
+          case "auth/user-disabled":
+            setAuthError("This account has been disabled");
+            break;
+          case "auth/user-not-found":
+            setError("email", {
+              type: "manual",
+              message: "No account found with this email",
+            });
+            break;
+          case "auth/wrong-password":
+            setError("password", {
+              type: "manual",
+              message: "Incorrect password",
+            });
+            break;
+          case "auth/too-many-requests":
+            setAuthError("Too many attempts. Try again later.");
+            break;
+          default:
+            setAuthError("Failed to sign in. Please try again.");
+            console.error("Sign in error:", error);
+        }
+      } else {
+        setAuthError("An unexpected error occurred. Please try again.");
+        console.error("Unexpected error:", error);
+      }
+    }
+  };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
@@ -35,6 +89,13 @@ export const SignIn: React.FC = () => {
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto">
       <h1 className="text-3xl font-semibold text-center">Sign In</h1>
       <Divider />
+
+      {authError && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+          {authError}
+        </div>
+      )}
+
       <div className="flex flex-col gap-4">
         <Controller
           name="email"
@@ -89,7 +150,11 @@ export const SignIn: React.FC = () => {
           )}
         />
 
-        <SubmitButton value="Sign In" className="mt-4" />
+        <SubmitButton
+          value="Sign In"
+          className="mt-4"
+          disabled={isSubmitting}
+        />
         <AuthLink
           promptText="Don't have an account?"
           linkText="Sign Up"
