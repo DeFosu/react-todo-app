@@ -29,16 +29,16 @@ const MainLayout: React.FC = () => {
             {currentUser ? (
               <button
                 onClick={handleLogout}
-                className="p-1 rounded-xl border border-neutral-700 text-neutral-700 hover:text-neutral-300 hover:border-neutral-300 transition-colors duration-100"
+                className="p-2 rounded-xl border border-neutral-500 text-neutral-500 hover:text-neutral-300 hover:border-neutral-300 transition-colors duration-100"
               >
-                <LogOut size={18} />
+                <LogOut size={16} />
               </button>
             ) : (
               <Link
                 to={ROUTES.signIn}
-                className="p-1 rounded-xl border border-neutral-700 text-neutral-700 hover:text-neutral-300 hover:border-neutral-300 transition-colors duration-100"
+                className="p-2 rounded-xl border border-neutral-500 text-neutral-500 hover:text-neutral-300 hover:border-neutral-300 transition-colors duration-100"
               >
-                <UserRound size={18} />
+                <UserRound size={16} />
               </Link>
             )}
           </div>
