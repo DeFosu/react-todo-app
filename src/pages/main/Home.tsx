@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Container from "../../components/Container";
 import TaskItem from "../../components/Task/TaskItem";
-import TaskForm from "../../components/Task/TaskForm";
+import AddTaskForm from "../../components/Task/TaskForm";
 import ShareTaskForm from "../../components/Task/ShareTaskForm";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -144,7 +144,7 @@ const Home: React.FC = () => {
   const handleEditTask = async (
     taskId: string,
     newTitle: string,
-    newDescription: string
+    newDescription?: string
   ) => {
     try {
       await updateFirebaseTask(taskId, {
@@ -205,17 +205,13 @@ const Home: React.FC = () => {
         </button>
       </div>
 
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Форма">
-        <TaskForm
+      <Modal isOpen={showForm} onClose={() => setShowForm(false)}>
+        <AddTaskForm
           onSubmit={handleAddTask}
           onCancel={() => setShowForm(false)}
         />
       </Modal>
-      <Modal
-        isOpen={showShareForm}
-        onClose={() => setShowShareForm(false)}
-        title="Форма"
-      >
+      <Modal isOpen={showShareForm} onClose={() => setShowShareForm(false)}>
         <ShareTaskForm
           onSubmit={handleShareTask}
           onCancel={() => setShowShareForm(false)}

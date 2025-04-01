@@ -1,5 +1,5 @@
 import { Link, Pencil, Square, SquareCheck, X } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 type TaskItemProps = {
   id: string;
@@ -34,10 +34,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedDescription, setEditedDescription] = useState(description);
   const [showDescription, setShowDescription] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     if (editedTitle.trim() && onEdit) {
-      onEdit(id, editedTitle, editedDescription);
+      onEdit(id, editedTitle, editedDescription || undefined);
       setIsEditing(false);
     }
   };
@@ -54,6 +55,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (isEditing && titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, [isEditing]);
+
   const canActuallyEdit = canEdit && !isDone && !!onEdit;
   const canActuallyToggle = !!onToggleComplete && (!sharedOwner || canEdit);
 
@@ -65,121 +72,129 @@ const TaskItem: React.FC<TaskItemProps> = ({
           : "border-neutral-700"
       } ${sharedOwner ? "border-blue-300 outline outline-blue-500" : ""}`}
     >
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-3 items-start">
         {canActuallyToggle ? (
           <button
             onClick={handleToggle}
-            className={`h-5 w-5 rounded border flex items-center justify-center ${
-              isDone ? "bg-green-500 border-green-600" : "border-neutral-400"
-            }`}
+            className="mt-1"
             aria-label={isDone ? "Mark as incomplete" : "Mark as complete"}
           >
-            {isDone ? <SquareCheck size={20} /> : <Square size={20} />}
+            {isDone ? (
+              <SquareCheck size={24} className="text-green-500" />
+            ) : (
+              <Square size={24} />
+            )}
           </button>
         ) : (
-          <div className="w-5" />
+          <div className="w-8 min-w-8" />
         )}
 
-        {isEditing ? (
-          <input
-            type="text"
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            className="flex-1 px-2 py-1 border rounded"
-            autoFocus
-            onKeyDown={(e) => e.key === "Enter" && handleSave()}
-          />
-        ) : (
-          <div
-            className="flex-1 cursor-pointer"
-            onClick={() => setShowDescription(!showDescription)}
-          >
-            <span className="text-lg font-semibold mr-2">#{number}</span>
-            <span className={`text-sm ${isDone ? "line-through" : ""}`}>
-              {title}
-            </span>
-            {sharedOwner && (
-              <span className="text-xs text-blue-600 ml-2">
-                (shared by {sharedOwner})
-                {canEdit && (
-                  <span className="text-green-600 ml-1">• can edit</span>
-                )}
+        <div className="flex-1 flex flex-col">
+          <div className="flex items-start justify-between gap-2">
+            <div
+              className="flex-1 flex items-center gap-2 cursor-pointer"
+              onClick={() => setShowDescription(!showDescription)}
+            >
+              <span className="text-lg font-semibold">#{number}</span>
+              <span
+                className={`text-sm break-words ${
+                  isDone ? "line-through" : ""
+                }`}
+              >
+                {title}
               </span>
+            </div>
+
+            {!isEditing && (
+              <div className="flex gap-1">
+                {onShare && (
+                  <button
+                    onClick={onShare}
+                    className="p-2 bg-purple-600 hover:bg-purple-700 rounded-xl cursor-pointer transition-colors duration-150"
+                    aria-label="Share task"
+                  >
+                    <Link size={16} />
+                  </button>
+                )}
+                {canActuallyEdit && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="p-2 bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer transition-colors duration-150"
+                    aria-label="Edit task"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    onClick={handleDelete}
+                    className="p-2 bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer transition-colors duration-150"
+                    aria-label="Delete task"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
 
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <button
-                onClick={handleSave}
-                className="text-green-500 hover:text-green-400"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => {
-                  setIsEditing(false);
-                  setEditedTitle(title);
-                  setEditedDescription(description);
-                }}
-                className="text-neutral-500 hover:text-neutral-400"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              {onShare && (
-                <button
-                  onClick={onShare}
-                  className="bg-purple-600 hover:bg-purple-700 p-1 rounded cursor-pointer"
-                >
-                  <Link />
-                </button>
+          {sharedOwner && (
+            <span className="text-xs text-blue-400 mt-1">
+              Shared by {sharedOwner}
+              {canEdit && (
+                <span className="text-green-400 ml-1">• can edit</span>
               )}
-              {canActuallyEdit && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="bg-blue-600 hover:bg-blue-700 p-1 rounded cursor-pointer"
-                >
-                  <Pencil />
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  onClick={handleDelete}
-                  className="bg-red-600 hover:bg-red-700 p-1 rounded cursor-pointer"
-                >
-                  <X />
-                </button>
-              )}
-            </>
+            </span>
           )}
         </div>
       </div>
 
-      {isEditing ? (
-        <div className="pl-8">
+      {isEditing && (
+        <div className="ml-11 mt-2 flex flex-col gap-2">
+          <input
+            ref={titleInputRef}
+            type="text"
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg bg-neutral-800 text-neutral-200"
+            placeholder="Task title"
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          />
           <textarea
             value={editedDescription}
             onChange={(e) => setEditedDescription(e.target.value)}
-            className="w-full px-2 py-1 border rounded min-h-[100px] text-sm text-neutral-300 bg-transparent"
-            placeholder="Enter description (optional)"
+            className="w-full px-3 py-2 border rounded-lg bg-neutral-800 text-neutral-200 min-h-[100px] text-sm"
+            placeholder="Description (optional)"
           />
-        </div>
-      ) : (
-        showDescription && (
-          <div className="pl-8 text-sm text-neutral-300">
-            {description || <span className="italic">No description</span>}
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setIsEditing(false);
+                setEditedTitle(title);
+                setEditedDescription(description);
+              }}
+              className="px-3 py-1 text-neutral-300 hover:bg-neutral-700 rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Save
+            </button>
           </div>
-        )
+        </div>
       )}
 
-      {createdAt && (
-        <div className="pl-8 text-xs text-neutral-400">
-          Created: {new Date(createdAt).toLocaleString()}
+      {!isEditing && showDescription && (
+        <div className="ml-11 mt-2 text-sm text-neutral-300">
+          {description || <span className="italic">No description</span>}
+          {createdAt && (
+            <div className="mt-2 text-xs text-neutral-400">
+              Created: {new Date(createdAt).toLocaleDateString()}
+            </div>
+          )}
         </div>
       )}
     </div>

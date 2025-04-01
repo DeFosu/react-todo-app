@@ -1,68 +1,97 @@
-import React, { useState } from "react";
+import React from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Divider, FormInput, SubmitButton, FormTextarea } from "../../Form";
 
-interface TaskFormProps {
+type TaskFormProps = {
   onSubmit: (title: string, description?: string) => void;
-  onCancel: () => void;
-}
+  onCancel?: () => void;
+};
 
-const TaskForm: React.FC<TaskFormProps> = ({ onSubmit, onCancel }) => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+type FormProps = {
+  title: string;
+  description: string;
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (title.trim()) {
-      onSubmit(title, description.trim() || undefined);
-      setTitle("");
-      setDescription("");
-    }
+const AddTaskForm: React.FC<TaskFormProps> = ({ onSubmit, onCancel }) => {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormProps>({
+    defaultValues: {
+      title: "",
+      description: "",
+    },
+  });
+
+  const handleFormSubmit = ({ title, description }: FormProps) => {
+    onSubmit(title, description);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-4 rounded-lg shadow-md">
-      <div className="mb-4">
-        <label htmlFor="title" className="block text-sm font-medium mb-1">
-          Title*
-        </label>
-        <input
-          id="title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg"
-          required
-          autoFocus
-        />
-      </div>
-      <div className="mb-4">
-        <label htmlFor="description" className="block text-sm font-medium mb-1">
-          Description
-        </label>
-        <textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg"
-          rows={3}
-        />
-      </div>
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 border rounded-lg hover:bg-neutral-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-        >
-          Add Task
-        </button>
-      </div>
-    </form>
+    <div className="bg-neutral-800 text-neutral-300 fill-neutral-300 border border-neutral-700 rounded-2xl px-4 py-6 w-full min-w-60 max-w-md ">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className=" w-full ">
+        <h1 className="text-2xl font-semibold text-center">Add Task</h1>
+        <Divider />
+        <div className="mb-5 flex flex-col gap-4">
+          <Controller
+            name="title"
+            control={control}
+            rules={{
+              required: "Title is required",
+              minLength: {
+                value: 3,
+                message: "Title must be at least 3 characters",
+              },
+            }}
+            render={({ field }) => (
+              <FormInput
+                label="Title"
+                type="text"
+                name="title"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                errors={errors}
+                required
+              />
+            )}
+          />
+          <Controller
+            name="description"
+            control={control}
+            rules={{
+              required: false,
+              minLength: {
+                value: 3,
+                message: "Description must be at least 3 characters",
+              },
+            }}
+            render={({ field }) => (
+              <FormTextarea
+                label="Description"
+                name="description"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                errors={errors}
+              />
+            )}
+          />
+        </div>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            type="button"
+            className="p-2 w-full mt-4 bg-neutral-800 text-neutral-300 cursor-pointer rounded font-semibold hover:underline focus-within:underline"
+          >
+            Cancel
+          </button>
+          <SubmitButton value="Add" className="mt-4" />
+        </div>
+      </form>
+    </div>
   );
 };
 
-export default TaskForm;
+export default AddTaskForm;

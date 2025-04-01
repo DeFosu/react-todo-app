@@ -17,6 +17,7 @@ type FormInputProps = {
   showPassword?: boolean;
   validationMessage?: string;
   autoComplete?: string;
+  placeholder?: string;
 };
 
 const FormInput: React.FC<FormInputProps> = ({
@@ -34,6 +35,7 @@ const FormInput: React.FC<FormInputProps> = ({
   showPassword,
   validationMessage,
   autoComplete,
+  placeholder,
 }) => {
   return (
     <div className="relative">
@@ -43,6 +45,7 @@ const FormInput: React.FC<FormInputProps> = ({
       </label>
       <div className="relative">
         <input
+          placeholder={placeholder}
           type={type}
           name={name}
           value={value}
